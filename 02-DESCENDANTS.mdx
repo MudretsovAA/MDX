@@ -1,0 +1,41 @@
+SELECT 
+{[Measures].[Internet Extended Amount]} 
+ON 0,
+DESCENDANTS([Date].[Calendar].[Calendar Year].&[2011]
+, [Date].[Calendar].[Month]
+--, SELF   
+--, AFTER  
+--, BEFORE  
+--, BEFORE_AND_AFTER  
+--, SELF_AND_AFTER  
+--, SELF_AND_BEFORE  
+,SELF_BEFORE_AFTER  
+--,LEAVES   
+) 
+--[Date].[Fiscal Year].[Fiscal Year]
+ON 1
+FROM [Adventure Works]
+WHERE 
+{[Date].[Day of Year].&[1]
+, [Date].[Day of Year].&[2]
+, [Date].[Day of Year].&[3]
+}
+
+//SELECT 
+//{[Measures].[Reseller Sales Amount]} 
+//ON 0,
+//Descendants  
+//   ([Geography].[Geography].[Country].&[United States]  
+//      //, [Geography].[Geography].[Country]  
+//   , [Geography].[Geography].[City]  
+//      //, [Geography].[Geography].Levels (3)  
+//      --, SELF   
+//      --, AFTER  
+//      --, BEFORE  
+//      --, BEFORE_AND_AFTER  
+//      --, SELF_AND_AFTER  
+//      --, SELF_AND_BEFORE  
+//      --,SELF_BEFORE_AFTER  
+//      ,LEAVES   
+//   ) ON 1
+//FROM [Adventure Works]

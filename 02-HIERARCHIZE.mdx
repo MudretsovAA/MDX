@@ -1,0 +1,44 @@
+WITH
+	MEMBER [Measures].[Internet Extended Amount - Last Child] AS
+		AGGREGATE(
+			Tail(
+				NonEmpty(
+				  [Date].[Calendar].[Month]
+				 ,{([Date].[Calendar].CurrentMember, [Measures].[Internet Extended Amount])}
+				)
+			   ,1
+			)
+			,[Measures].[Internet Extended Amount]
+		)
+
+MEMBER 
+MEASURES.[Internet Extended Amount To Date] 
+AS 
+Sum(PeriodsToDate([Date].[Calendar].[(All)]), [Measures].[Internet Extended Amount])
+
+MEMBER 
+MEASURES.[Internet Extended AmountToDate] AS
+SUM({[Date].[Calendar].CurrentMember.Level.Members}.Item(0):[Date].[Calendar].CurrentMember,[Measures].[Internet Extended Amount])
+  
+
+SELECT	
+	{[Measures].[Internet Extended Amount],
+	MEASURES.[Internet Extended Amount To Date],
+	MEASURES.[Internet Extended AmountToDate],
+		[Measures].[Internet Extended Amount - Last Child]
+	} ON 0,
+	NON EMPTY {
+		HIERARCHIZE(
+			{
+				[Date].[Calendar].[Calendar Year],
+				[Date].[Calendar].[Month]
+			}
+		)
+	} ON 1
+FROM
+	[Adventure Works]
+WHERE
+	(
+		[Date].[Calendar Year].&[2013]
+		, [Date].[Calendar Semester].&[2013]&[1]
+	)

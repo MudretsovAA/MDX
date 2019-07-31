@@ -1,0 +1,61 @@
+
+--Объекты куба
+select * from $system.DBSCHEMA_TABLES
+
+--Список команд
+select * from $system.DBSCHEMA_TABLES where TABLE_TYPE = 'SCHEMA'
+--Сессии
+select * from $system.DISCOVER_SESSIONS
+--where SESSION_SPID = 8950767
+--order by SESSION_SPID
+order by SESSION_USED_MEMORY desc
+--order by SESSION_ELAPSED_TIME_MS desc
+--order by SESSION_IDLE_TIME_MS desc
+--order by SESSION_READ_KB desc
+--order by SESSION_START_TIME desc
+--order by SESSION_LAST_COMMAND_START_TIME desc
+order by SESSION_CPU_TIME_MS desc
+
+--
+<Cancel xmlns="http://schemas.microsoft.com/analysisservices/2003/engine"><SPID>113628</SPID><CancelAssociated>1</CancelAssociated></Cancel>
+/*
+Global.Sessions.SPID_8950767
+*/
+
+/*
+
+*/
+
+select * from $system.DISCOVER_XEVENT_TRACE_DEFINITION
+select * from $system.DISCOVER_LOCKS
+--Описание объектов куба
+select * from $system.MDSCHEMA_DIMENSIONS
+--Настройка логирования
+select * from $system.DISCOVER_TRACES
+
+--Показывает использование памяти по конкретным объектам
+select * from $system.DISCOVER_MEMORYUSAGE
+order by MemoryUsed desc
+
+
+--Просто посмотреть активность
+Select * from $System.discover_object_activity
+order by OBJECT_CPU_TIME_MS desc
+
+
+----Автоматизировано
+--Потребление памяти объектами
+select * from $system.DISCOVER_OBJECT_MEMORY_USAGE
+---where OBJECT_PARENT_PATH like '%OrdersTHR4%'
+order by OBJECT_MEMORY_NONSHRINKABLE desc
+
+--Потребление памяти объектами (неосвобожденная)
+select * from $system.DISCOVER_OBJECT_MEMORY_USAGE
+order by OBJECT_MEMORY_NONSHRINKABLE desc
+--order by OBJECT_MEMORY_CHILD_NONSHRINKABLE desc
+
+--Потребление памяти объектами (освобожденная)
+select * from $system.DISCOVER_OBJECT_MEMORY_USAGE
+--order by OBJECT_TIME_CREATED DESC--,  
+--order by OBJECT_MEMORY_SHRINKABLE desc
+order by OBJECT_MEMORY_NONSHRINKABLE desc
