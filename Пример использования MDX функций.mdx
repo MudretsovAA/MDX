@@ -1,0 +1,82 @@
+WITH 
+SET [Отчетная дата] AS 
+[DimMainDate].[Г-М-Д].[Date].&[2018-03-16T00:00:00]
+--STRTOMEMBER(@DimDate, CONSTRAINED)
+SET [Не выставки] AS
+{[DimSupplyContract].[IS_Exhibition_ID].&[0]}
+
+SET [Период поиска] AS EXCEPT(ORDER({[DimMainDate].[Г-М-Д].[MonthID].&[201001] : [Дата отчета](0).PARENT.PREVMEMBER}, [Measures].[Месяц ID], BDESC), [DimMainDate].[Г-М-Д].[MonthID].&[201412])
+
+MEMBER [Measures].[Показатель по Регионам] as
+(Ancestor([DimWorkingShopsAndManagers].[Гр рег-Упр гр рег-Рег-Упр рег-Управ-Магазин-Менеджер].CurrentMember,3), [Measures].[Показатель])
+
+Member [Measures].[cmHistoryMaxForRegionKitchenCount] as
+Max([Период поиска], [Measures].[Показатель по Регионам])
+
+MEMBER [Measures].[Неделю назад] AS ([Отчетная дата].Item(0).lag(7), [Measures].[Показатель])
+MEMBER [Measures].[Вчера] AS ([Отчетная дата].Item(0).lag(1), [Measures].[Показатель])
+MEMBER [Measures].[Месяц назад] AS SUM(ParallelPeriod([DimMainDate].[Г-М-Д].[MonthID], 1, [Отчетная дата](0)), [Measures].[Показатель])
+MEMBER [Measures].[Текущий день] AS ([Отчетная дата].Item(0), [Measures].[Показатель])
+MEMBER [Measures].[Завтра] AS ([Отчетная дата].Item(0).LAG(-1), [Measures].[Показатель])
+MEMBER [Measures].[За месяц по выбранный день] AS SUM(MTD([Отчетная дата].Item(0)), [Measures].[Показатель])
+MEMBER [Measures].[Прошлый месяц по выбранный день] AS SUM(MTD(ParallelPeriod([DimMainDate].[Г-М-Д].[MonthID], 1, [Отчетная дата](0))), [Measures].[Показатель])
+MEMBER [Measures].[Прошлый месяц по выбранный день2] AS
+IIF(ISEMPTY(PARALLELPERIOD([DimMainDate].[Г-М-Д].[MonthID], 1, [Отчетная дата](0)))-- Есди нет дня в прошлом месяце
+	,(ANCESTOR([Отчетная дата](0),[DimMainDate].[Г-М-Д].[MonthID]).LAG(1), [Measures].[Показатель]) --То берём за весь месяц
+	,SUM(MTD(PARALLELPERIOD([DimMainDate].[Г-М-Д].[MonthID], 1, [Отчетная дата].ITEM(0))), [Measures].[Показатель])) --Иначе с начала прошлого месяца по выбраный день прошлого месяца
+MEMBER [Measures].[За месяц] AS SUM(Ancestor([Отчетная дата].Item(0), 1), [Measures].[Показатель])
+MEMBER [Measures].[За месяц2] AS ([Отчетная дата].Item(0).PARENT, [Measures].[Показатель])
+MEMBER [Measures].[За прошлый месяц] AS ([Отчетная дата](0).PARENT.PREVMEMBER, [Measures].[Показатель])
+MEMBER [Measures].[За месяц без выставок] AS SUM([Не выставки], [Measures].[За месяц])
+MEMBER [Measures].[За месяц Кухни] AS IIF([DimSupplyContract].[OrderType] IS [DimSupplyContract].[OrderType].&[81], [Measures].[За месяц], NULL)
+MEMBER [Measures].[Год назад] AS ([Отчетная дата].Item(0).PARENT.LAG(12), [Measures].[Показатель])
+MEMBER [Measures].[За год по выбранный день] AS SUM(YTD([Отчетная дата].Item(0)), [Measures].[Показатель])
+MEMBER [Measures].[За текущий год] AS ([Отчетная дата](0).PARENT.PARENT, [Measures].[Показатель])
+MEMBER [Measures].[За последние 6 месяцев] AS SUM(LASTPERIODS(6, [Отчетная дата](0).PARENT.PREVMEMBER), [Measures].[Показатель]) 
+
+/*
+, TopCount(nonempty([DimMainDate].[MonthId].[MonthId], [Measures].[QTY_RECLAMATION_STATE_ON_DATE]), 24, MONTH_KEY)
+*/
+SELECT
+NON EMPTY 
+TOPCOUNT(
+(
+{[DimWorkingShopsAndManagers].[REGION].&[1], [DimWorkingShopsAndManagers].[REGION].&[2]}
+*[DimSupplyContract].[OrderType].Members), 12)
+--
+ON 0,
+{
+[Measures].[Показатель]
+,[Measures].[Неделю назад]
+,[Measures].[Вчера]
+,[Measures].[Месяц назад]
+,[Measures].[Текущий день]
+,[Measures].[Завтра]
+,[Measures].[За месяц по выбранный день]
+,[Measures].[Прошлый месяц по выбранный день]
+,[Measures].[Прошлый месяц по выбранный день2]
+,[Measures].[За месяц]
+,[Measures].[За месяц2]
+,[Measures].[За прошлый месяц]
+,[Measures].[За месяц без выставок]
+,[Measures].[За месяц Кухни]
+,[Measures].[Год назад]
+,[Measures].[За год по выбранный день]
+,[Measures].[За текущий год]
+,[Measures].[За последние 6 месяцев]
+--,[Measures].z
+} 
+HAVING [Measures].[Показатель] > 0 
+DIMENSION PROPERTIES MEMBER_CAPTION, MEMBER_KEY ON 1
+FROM
+(SELECT {[DimSupplyContract].[OrderType].&[81], [DimSupplyContract].[OrderType].&[968162], [DimSupplyContract].[OrderType].&[94], [DimSupplyContract].[OrderType].&[84]} ON 0 
+FROM [CUBE_Supply_Contracts])
+WHERE 
+(EXCEPT([DimSupplyContract].[CURRENT STATE].[CURRENT STATE], {[DimSupplyContract].[CURRENT STATE].&[2], [DimSupplyContract].[CURRENT STATE].&[5], [DimSupplyContract].[CURRENT STATE].&[4]})
+, EXISTS([DimWorkingShopsAndManagers].[GR REGION].[GR REGION], 
+--STRTOSET(@SELECTED_GR_REGION, CONSTRAINED)
+{[DimWorkingShopsAndManagers].[GR REGION].&[1], [DimWorkingShopsAndManagers].[GR REGION].&[2]}
+)
+)
+--[DimMainDate].[Г-М-Д].[Date].&[2018-16-03T00:00:00]
+--[Отчетная дата].Item(0)
