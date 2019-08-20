@@ -42,3 +42,12 @@ WHERE
 		[Date].[Calendar Year].&[2013]
 		, [Date].[Calendar Semester].&[2013]&[1]
 	)
+
+/*
+Исключение из дерева на любом уровне
+CrossJoin(Hierarchize({DrilldownLevel({
+({
+                EXISTS( [Поставщики].[Поставщик].[Поставщик] ,
+                STRTOSET(@rp_Supplier, CONSTRAINED))
+})
+*/
